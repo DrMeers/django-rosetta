@@ -22,10 +22,14 @@ class RosettaTestCase(TestCase):
     def setUp(self):
         user    = User.objects.create_user('test_admin', 'test@test.com', 'test_password')
         user2   = User.objects.create_user('test_admin2', 'test@test2.com', 'test_password')
+        user3   = User.objects.create_user('test_admin3', 'test@test2.com', 'test_password')
         
-        user.is_superuser, user2.is_superuser = True,True
+        user.is_superuser, user2.is_superuser, user3.is_superuser = True,True, True
+        user.is_staff, user2.is_staff, user3.is_staff = True,True, False
+        
         user.save()
         user2.save()
+        user3.save()
         
         self.client2 = Client()
         
@@ -256,3 +260,13 @@ class RosettaTestCase(TestCase):
         r = self.client.get(reverse('rosetta-language-selection', args=('xx',0,), kwargs=dict() ) +'?rosetta')
         r = self.client.get(reverse('rosetta-home'))
         self.assertTrue('tabindex="3"' in r.content)
+
+
+    def test_12_issue_82_staff_user(self):
+        self.client3 = Client()
+        self.client3.login(username='test_admin3',password='test_password')
+
+        
+        r = self.client3.get(reverse('rosetta-language-selection', args=('xx',0,), kwargs=dict() ) +'?rosetta')
+        r = self.client3.get(reverse('rosetta-home'))
+        self.assertTrue(not r.content)

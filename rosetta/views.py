@@ -335,7 +335,7 @@ lang_sel=never_cache(lang_sel)
 def can_translate(user):
     if not user.is_authenticated():
         return False
-    elif user.is_superuser:
+    elif user.is_superuser and user.is_staff:
         return True
     else:
         try:
