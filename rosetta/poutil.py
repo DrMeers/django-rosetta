@@ -1,13 +1,14 @@
-import re, string, sys, os
+import re, string, sys, os, django
 from django.conf import settings
 from rosetta.conf import settings as rosetta_settings
+from django.core.cache import cache
 
 try:
     set
 except NameError:
     from sets import Set as set   # Python 2.3 fallback
     
-def find_pos(lang, include_djangos = False, include_rosetta = False):
+def find_pos(lang, project_apps = True, django_apps = False, third_party_apps = False):
     """
     scans a couple possible repositories of gettext catalogs for the given 
     language code
@@ -19,11 +20,22 @@ def find_pos(lang, include_djangos = False, include_rosetta = False):
     # project/locale
     parts = settings.SETTINGS_MODULE.split('.')
     project = __import__(parts[0], {}, {}, [])
-    paths.append(os.path.join(os.path.dirname(project.__file__), 'locale'))
-    
+    abs_project_path = os.path.abspath(os.path.dirname(project.__file__))
+    if project_apps:
+        paths.append(os.path.abspath(os.path.join(os.path.dirname(project.__file__), 'locale')))
+        
     # django/locale
-    if include_djangos:
-        paths.append(os.path.join(os.path.dirname(sys.modules[settings.__module__].__file__), 'locale'))
+    if django_apps:
+        django_paths = cache.get('rosetta_django_paths')
+        if django_paths is None:
+            django_paths = []
+            for root,dirnames,filename in os.walk(os.path.abspath(os.path.dirname(django.__file__))):
+                if 'locale' in dirnames:
+                    django_paths.append(os.path.join(root , 'locale'))
+                    continue
+            cache.set('rosetta_django_paths', django_paths, 60*60)
+        paths = paths + django_paths
+        
     
     # settings 
     for localepath in settings.LOCALE_PATHS:
@@ -32,10 +44,7 @@ def find_pos(lang, include_djangos = False, include_rosetta = False):
     
     # project/app/locale
     for appname in settings.INSTALLED_APPS:
-        
-        if 'rosetta' == appname and include_rosetta == False:
-            continue
-        
+                
         if rosetta_settings.EXCLUDED_APPLICATIONS and appname in rosetta_settings.EXCLUDED_APPLICATIONS:
             continue
             
@@ -45,10 +54,27 @@ def find_pos(lang, include_djangos = False, include_rosetta = False):
         else:
             app = __import__(appname, {}, {}, [])
 
-        apppath = os.path.join(os.path.dirname(app.__file__), 'locale')
+        apppath = os.path.abspath(os.path.join(os.path.dirname(app.__file__), 'locale'))
+        
 
+        # django apps
+        if 'django/contrib' in apppath and not django_apps:
+            continue
+
+        # third party external
+        if not third_party_apps and abs_project_path not in os.path.abspath(apppath):
+            continue
+            
+        # local apps
+        if not project_apps and abs_project_path in os.path.abspath(apppath):
+            continue
+            
+        
         if os.path.isdir(apppath):
             paths.append(apppath)
+            
+            
+        
             
     ret = set()
     rx=re.compile(r'(\w+)/../\1')

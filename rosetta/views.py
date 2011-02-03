@@ -278,11 +278,22 @@ def list_languages(request):
     that can be translated and their translation progress
     """
     languages = []
-    do_django = 'django' in request.GET
-    do_rosetta = 'rosetta' in request.GET
+    
+    if 'filter' in request.GET:
+        if request.GET.get('filter') in ('project', 'third-party', 'django', 'all'):
+            filter_ = request.GET.get('filter')
+            request.session['rosetta_i18n_catalog_filter'] = filter_
+            return HttpResponseRedirect(reverse('rosetta-pick-file'))
+    
+    rosetta_i18n_catalog_filter = request.session.get('rosetta_i18n_catalog_filter', 'project')
+    
+    third_party_apps = rosetta_i18n_catalog_filter in ('all', 'third-party')
+    django_apps = rosetta_i18n_catalog_filter in ('all', 'django')
+    project_apps = rosetta_i18n_catalog_filter in ('all', 'project')
+    
     has_pos = False
     for language in settings.LANGUAGES:
-        pos = find_pos(language[0],include_djangos=do_django,include_rosetta=do_rosetta)        
+        pos = find_pos(language[0], project_apps=project_apps,django_apps=django_apps,third_party_apps=third_party_apps)
         has_pos = has_pos or len(pos)
         languages.append(
             (language[0], 
@@ -308,10 +319,13 @@ def lang_sel(request,langid,idx):
         raise Http404
     else:
         
-        do_django = 'django' in request.GET
-        do_rosetta = 'rosetta' in request.GET
+        rosetta_i18n_catalog_filter = request.session.get('rosetta_i18n_catalog_filter', 'project')
         
-        file_ = find_pos(langid,include_djangos=do_django,include_rosetta=do_rosetta)[int(idx)]
+        third_party_apps = rosetta_i18n_catalog_filter in ('all', 'third-party')
+        django_apps = rosetta_i18n_catalog_filter in ('all', 'django')
+        project_apps = rosetta_i18n_catalog_filter in ('all', 'project')
+        
+        file_ = find_pos(langid, project_apps=project_apps,django_apps=django_apps,third_party_apps=third_party_apps)[int(idx)]
         
         request.session['rosetta_i18n_lang_code'] = langid
         request.session['rosetta_i18n_lang_name'] = unicode([l[1] for l in settings.LANGUAGES if l[0] == langid][0])
