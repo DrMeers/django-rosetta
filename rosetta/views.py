@@ -1,17 +1,18 @@
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
-from django.core.paginator import Paginator, InvalidPage
-from django.core.urlresolvers import reverse, resolve, Resolver404
+from django.core.paginator import Paginator
+from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
-from django.utils.encoding import smart_unicode, force_unicode, iri_to_uri
+from django.template import RequestContext
+from django.utils.encoding import smart_unicode, iri_to_uri
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.cache import never_cache
+from rosetta.conf import settings as rosetta_settings
 from rosetta.polib import pofile
 from rosetta.poutil import find_pos, pagination_range
-from rosetta.conf import settings as rosetta_settings
-import re, os, rosetta, datetime, unicodedata, hashlib
-from django.template import RequestContext
+import re, rosetta, datetime, unicodedata, hashlib, os
+
 
 def home(request):
     """
