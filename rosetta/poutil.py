@@ -20,7 +20,7 @@ def find_pos(lang, project_apps = True, django_apps = False, third_party_apps = 
     # project/locale
     parts = settings.SETTINGS_MODULE.split('.')
     project = __import__(parts[0], {}, {}, [])
-    abs_project_path = os.path.abspath(os.path.dirname(project.__file__))
+    abs_project_path = os.path.normpath(os.path.abspath(os.path.dirname(project.__file__)))
     if project_apps:
         paths.append(os.path.abspath(os.path.join(os.path.dirname(project.__file__), 'locale')))
         
@@ -54,19 +54,19 @@ def find_pos(lang, project_apps = True, django_apps = False, third_party_apps = 
         else:
             app = __import__(appname, {}, {}, [])
 
-        apppath = os.path.abspath(os.path.join(os.path.dirname(app.__file__), 'locale'))
+        apppath = os.path.normpath(os.path.abspath(os.path.join(os.path.dirname(app.__file__), 'locale')))
         
 
         # django apps
-        if 'django/contrib' in apppath and not django_apps:
+        if 'contrib' in apppath and 'django' in apppath and not django_apps:
             continue
 
         # third party external
-        if not third_party_apps and abs_project_path not in os.path.abspath(apppath):
+        if not third_party_apps and abs_project_path not in apppath:
             continue
             
         # local apps
-        if not project_apps and abs_project_path in os.path.abspath(apppath):
+        if not project_apps and abs_project_path in apppath:
             continue
             
         

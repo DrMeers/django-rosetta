@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
 from rosetta.conf import settings as rosetta_settings
-import os, shutil
+import os, shutil, django
 
 
 class RosettaTestCase(TestCase):
@@ -16,7 +16,8 @@ class RosettaTestCase(TestCase):
         super(RosettaTestCase,self).__init__(*args,**kwargs)
         self.curdir = os.path.dirname(__file__)
         self.dest_file = os.path.normpath(os.path.join(self.curdir, '../locale/xx/LC_MESSAGES/django.po'))
-
+        self.django_version_major, self.django_version_minor = django.VERSION[0],django.VERSION[1]
+        
 
     def setUp(self):
         user    = User.objects.create_user('test_admin', 'test@test.com', 'test_password')
@@ -290,22 +291,30 @@ class RosettaTestCase(TestCase):
     def test_13_catalog_filters(self):
         settings.LANGUAGES = (('fr','French'),('xx','Dummy Language'),)
         
+        
+        
         self.client.get(reverse('rosetta-pick-file')+'?filter=third-party')
         r = self.client.get(reverse('rosetta-pick-file'))
         self.assertTrue(os.path.normpath('rosetta/locale/xx/LC_MESSAGES/django.po') in r.content)
-        self.assertTrue(('django/contrib') not in r.content)
+        self.assertTrue(('contrib') not in r.content)
         
         self.client.get(reverse('rosetta-pick-file')+'?filter=django')
         r = self.client.get(reverse('rosetta-pick-file'))
         self.assertTrue(os.path.normpath('rosetta/locale/xx/LC_MESSAGES/django.po') not in r.content)
-        self.assertTrue(('django/contrib') in r.content)
+        
+        if self.django_version_major >=1 and self.django_version_minor >=3:
+            self.assertTrue(('contrib') in r.content)
         
         self.client.get(reverse('rosetta-pick-file')+'?filter=all')
         r = self.client.get(reverse('rosetta-pick-file'))
         self.assertTrue(os.path.normpath('rosetta/locale/xx/LC_MESSAGES/django.po') in r.content)
-        self.assertTrue(('django/contrib') in r.content)
+        
+        if self.django_version_major >=1 and self.django_version_minor >=3:
+            self.assertTrue(('contrib') in r.content)
         
         self.client.get(reverse('rosetta-pick-file')+'?filter=project')
         r = self.client.get(reverse('rosetta-pick-file'))
         self.assertTrue(os.path.normpath('rosetta/locale/xx/LC_MESSAGES/django.po') not in r.content)
-        self.assertTrue(('django/contrib') not in r.content)
+        
+        if self.django_version_major >=1 and self.django_version_minor >=3:
+            self.assertTrue(('contrib') not in r.content)
