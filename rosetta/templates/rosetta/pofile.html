@@ -67,6 +67,11 @@
                                     <span class="part">{{message.msgid|format_message|linebreaksbr}}</span>
                                     <span class="part">{{message.msgid_plural|format_message|linebreaksbr}}</span>
                                 </div>
+                                
+                                {% if message.msgctxt %}
+                                    <span class="context">{% trans "Context hint" %}: {{message.msgctxt}}</span>
+                                {% endif %}
+                                
                             </td>
                             <td class="translation">
                                 {% for k, msgstr in message.msgstr_plural.items|dictsort:"0"  %}
@@ -75,7 +80,12 @@
                                 {% endfor %}
                             </td>
                         {% else %}
-                            <td class="original">{{ message.msgid|format_message|linebreaksbr }}</td>
+                            <td class="original">
+                                <span class="message">{{ message.msgid|format_message|linebreaksbr }}</span>
+                            {% if message.msgctxt %}
+                                <span class="context">{% trans "Contextual hint" %}: "{{message.msgctxt}}"</span>
+                            {% endif %}
+                            </td>
                             {% if main_language %}<td class="original">{{ message.main_lang|format_message|linebreaksbr }}</td>{% endif %}
                             <td class="translation">
                                 <textarea rows="{{message.msgid|format_message|lines_count}}" cols="40" name="m_{{message.md5hash}}" tabindex="{% increment tab_idx %}">{{message.msgstr}}</textarea>
