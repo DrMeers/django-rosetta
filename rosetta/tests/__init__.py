@@ -320,7 +320,7 @@ class RosettaTestCase(TestCase):
             self.assertTrue(('contrib') not in r.content)
 
 
-    def test_14_issue_99_staff_user(self):
+    def test_14_issue_99_context_and_comments(self):
         self.client.get(reverse('rosetta-pick-file')+'?filter=third-party')
         r = self.client.get(reverse('rosetta-language-selection', args=('xx',0,), kwargs=dict() ))
         r = self.client.get(reverse('rosetta-home'))
