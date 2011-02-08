@@ -70,6 +70,10 @@
                                 
                                 {% if message.msgctxt %}
                                     <span class="context">{% trans "Context hint" %}: {{message.msgctxt}}</span>
+                                {% else %}
+                                    {% if message.comment %}
+                                    <span class="context">{% trans "Context hint" %}: {{message.comment}}</span>
+                                    {% endif %}
                                 {% endif %}
                                 
                             </td>
@@ -84,6 +88,10 @@
                                 <span class="message">{{ message.msgid|format_message|linebreaksbr }}</span>
                             {% if message.msgctxt %}
                                 <span class="context">{% trans "Contextual hint" %}: "{{message.msgctxt}}"</span>
+                                {% else %}
+                                {% if message.comment %}
+                                <span class="context">{% trans "Context hint" %}: {{message.comment}}</span>
+                                {% endif %}                        
                             {% endif %}
                             </td>
                             {% if main_language %}<td class="original">{{ message.main_lang|format_message|linebreaksbr }}</td>{% endif %}

@@ -318,3 +318,11 @@ class RosettaTestCase(TestCase):
         
         if self.django_version_major >=1 and self.django_version_minor >=3:
             self.assertTrue(('contrib') not in r.content)
+
+
+    def test_14_issue_99_staff_user(self):
+        self.client.get(reverse('rosetta-pick-file')+'?filter=third-party')
+        r = self.client.get(reverse('rosetta-language-selection', args=('xx',0,), kwargs=dict() ))
+        r = self.client.get(reverse('rosetta-home'))
+        self.assertTrue('This is a text of the base template' in r.content)
+        self.assertTrue('Context hint' in r.content)
