@@ -11,6 +11,7 @@ from django.views.decorators.cache import never_cache
 from rosetta.conf import settings as rosetta_settings
 from rosetta.polib import pofile
 from rosetta.poutil import find_pos, pagination_range
+from rosetta.signals import entry_changed, post_save
 import re, rosetta, datetime, unicodedata, hashlib, os
 
 
@@ -87,6 +88,9 @@ def home(request):
                     # If someone did a makemessage, some entries might
                     # have been removed, so we need to check.
                     if entry:
+                        old_msgstr = entry.msgstr
+                        
+                        
                         if plural_id is not None:
                             plural_string = fix_nls(entry.msgstr_plural[plural_id], value)
                             entry.msgstr_plural[plural_id] = plural_string
@@ -94,12 +98,24 @@ def home(request):
                             entry.msgstr = fix_nls(entry.msgid, value)
 
                         is_fuzzy = bool(request.POST.get('f_%s' % md5hash, False))
-
-                        if 'fuzzy' in entry.flags and not is_fuzzy:
+                        old_fuzzy = 'fuzzy' in entry.flags
+                        
+                        if old_fuzzy and not is_fuzzy:
                             entry.flags.remove('fuzzy')
-                        elif 'fuzzy' not in entry.flags and is_fuzzy:
+                        elif not old_fuzzy and is_fuzzy:
                             entry.flags.append('fuzzy')
+                            
                         file_change = True
+                        
+                        if old_msgstr != value or old_fuzzy != is_fuzzy:
+                            entry_changed.send(sender=entry,
+                                               user=request.user,
+                                               old_msgstr = old_msgstr,
+                                               old_fuzzy = old_fuzzy,
+                                               pofile = rosetta_i18n_fn,
+                                               language_code = rosetta_i18n_lang_code,
+                                               )
+                                               
                     else:
                         request.session['rosetta_last_save_error'] = True
                         
@@ -116,6 +132,9 @@ def home(request):
                 try:
                     rosetta_i18n_pofile.save()
                     rosetta_i18n_pofile.save_as_mofile(rosetta_i18n_fn.replace('.po','.mo'))
+                    
+                    post_save.send(sender=None,language_code=rosetta_i18n_lang_code)
+                    
                     
                     # Try auto-reloading via the WSGI daemon mode reload mechanism
                     if  rosetta_settings.WSGI_AUTO_RELOAD and \
