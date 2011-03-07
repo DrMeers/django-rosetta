@@ -2,13 +2,12 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
+from django.dispatch import receiver
 from django.test import TestCase
 from django.test.client import Client
-from rosetta.signals import entry_changed, post_save
 from rosetta.conf import settings as rosetta_settings
+from rosetta.signals import entry_changed, post_save
 import os, shutil, django
-from django.dispatch import receiver, Signal
-
 
 
 class RosettaTestCase(TestCase):
@@ -386,3 +385,29 @@ class RosettaTestCase(TestCase):
         # reset the original file
         shutil.move(self.dest_file+'.orig', self.dest_file)
         
+
+    def test_16_issue_103_post_save_signal_has_request(self):
+        # copy the template file
+        shutil.copy(self.dest_file, self.dest_file + '.orig')
+        shutil.copy(os.path.normpath(os.path.join(self.curdir,'./django.po.template')), self.dest_file)
+
+
+        self.client.get(reverse('rosetta-pick-file')+'?filter=third-party')
+        r = self.client.get(reverse('rosetta-language-selection', args=('xx',0,), kwargs=dict() ))
+        r = self.client.get(reverse('rosetta-home'))
+
+        @receiver(post_save)
+        def test_receiver(sender, **kwargs):
+            self.test_16_has_request = 'request' in kwargs
+
+        self.assertTrue('m_e48f149a8b2e8baa81b816c0edf93890' in r.content)
+
+        # post a translation
+        r = self.client.post(reverse('rosetta-home'), dict(m_e48f149a8b2e8baa81b816c0edf93890='Hello, world', _next='_next'))
+
+        self.assertTrue(self.test_16_has_request)
+        del(self.test_16_has_request)
+        # reset the original file
+        shutil.move(self.dest_file+'.orig', self.dest_file)
+
+

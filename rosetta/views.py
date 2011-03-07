@@ -133,7 +133,7 @@ def home(request):
                     rosetta_i18n_pofile.save()
                     rosetta_i18n_pofile.save_as_mofile(rosetta_i18n_fn.replace('.po','.mo'))
                     
-                    post_save.send(sender=None,language_code=rosetta_i18n_lang_code)
+                    post_save.send(sender=None,language_code=rosetta_i18n_lang_code,request=request)
                     
                     
                     # Try auto-reloading via the WSGI daemon mode reload mechanism

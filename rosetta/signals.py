@@ -4,5 +4,5 @@ entry_changed = dispatch.Signal(
 )
 
 post_save = dispatch.Signal(
-    providing_args=["language_code",]
+    providing_args=["language_code","request",]
 )
