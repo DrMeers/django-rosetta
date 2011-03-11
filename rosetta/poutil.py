@@ -1,4 +1,4 @@
-import re, os, django
+import os, django
 from django.conf import settings
 from rosetta.conf import settings as rosetta_settings
 from django.core.cache import cache
@@ -77,7 +77,6 @@ def find_pos(lang, project_apps = True, django_apps = False, third_party_apps = 
         
             
     ret = set()
-    rx=re.compile(r'(\w+)/../\1')
     langs = (lang,)
     if u'-' in lang:
         _l,_c =  map(lambda x:x.lower(),lang.split(u'-'))
@@ -86,12 +85,14 @@ def find_pos(lang, project_apps = True, django_apps = False, third_party_apps = 
         _l,_c = map(lambda x:x.lower(),lang.split(u'_'))
         langs += (u'%s-%s' %(_l, _c), u'%s-%s' %(_l, _c.upper()), )
         
+    paths = map(os.path.normpath, paths)
     for path in paths:
         for lang_ in langs:
-            dirname = rx.sub(r'\1', '%s/%s/LC_MESSAGES/' %(path,lang_))
+            dirname = os.path.join(path, lang_, 'LC_MESSAGES')
             for fn in ('django.po','djangojs.po',):
-                if os.path.isfile(dirname+fn):
-                    ret.add(os.path.abspath(dirname+fn))
+                filename = os.path.join(dirname, fn)
+                if os.path.isfile(filename):
+                    ret.add(os.path.abspath(filename))
     return list(ret)
 
 def pagination_range(first,last,current):
